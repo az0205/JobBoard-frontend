@@ -7,20 +7,27 @@ const MainC = () => {
 const navigate = useNavigate();
 
 const [jobs, setJobs] = useState([]);
+const [apps, setApps] = useState([]);
 const [selectedJob, setSelectedJob] = useState(null);
 const [popup, setPopup] = useState(false);
+const [view, setView] = useState("jobs");
+const [shortlistedJobs, setShortlistedJobs] = useState([]);
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const res = await API.get("/jobs");
-        setJobs(res.data.data);
+        const resJob = await API.get("/jobs");
+        setJobs(resJob.data.data);
+
+        const resApp = await API.get("/candidate/application");
+        setApps(resApp.data.data);
+
       } catch (err) {
         console.error("Error fetching jobs", err);
       }
     };
     fetchJobs();
-  }, []);
+  }, [view]);
 
 
   const handleViewDetails = (job) => {
@@ -32,6 +39,14 @@ const [popup, setPopup] = useState(false);
     setPopup(false);
     setSelectedJob(null);
   };
+
+  const handleShortlist = (jobId) => {
+  if (shortlistedJobs.includes(jobId)) {
+    setShortlistedJobs(shortlistedJobs.filter(id => id !== jobId));
+  } else {
+    setShortlistedJobs([...shortlistedJobs, jobId]);
+  }
+};
 
   return (
     <>
@@ -45,7 +60,28 @@ const [popup, setPopup] = useState(false);
       
     </nav>
     </header>
-<div className='max-w-4xl mx-auto p-6 bg-gray-100 min-w-screen min-h-screen'>
+  <div className="flex bg-gray-100 min-h-screen">
+
+      <aside className="w-64 bg-gray-800 text-white p-6">
+        <h2 className="text-2xl font-bold mb-8">Dashboard</h2>
+        <nav className="space-y-4">
+          <button onClick={() => setView("jobs")}
+            
+            className={`w-full text-left px-4 py-2 rounded cursor-pointer ${view === "jobs" ? "bg-gray-700" : "hover:bg-gray-700"}`}
+          >
+            Jobs
+          </button>
+          <button onClick={() => setView("applications")}
+            
+            className={`w-full text-left px-4 py-2 rounded cursor-pointer ${view === "applications" ? "bg-gray-700" : "hover:bg-gray-700"}`}
+          >
+            My Applications
+          </button>
+        </nav>
+      </aside>
+
+  <div className="flex-1 p-6">
+    {view === "jobs" && (<>
         <h1 className='text-4xl font-extrabold text-gray-800 mb-8 text-center'>
           Available Jobs
         </h1>
@@ -73,7 +109,6 @@ const [popup, setPopup] = useState(false);
             </div>
           ))}
         </div>
-        
         {popup && selectedJob && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
@@ -82,6 +117,9 @@ const [popup, setPopup] = useState(false);
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               {selectedJob.title}
             </h2>
+            <p className="text-gray-600 mb-4">
+              <strong>Company:</strong> {selectedJob.company || "No company provided."}
+            </p>
             <p className="text-gray-600 mb-4">
               <strong>Description:</strong> {selectedJob.description || "No description provided."}
             </p>
@@ -102,7 +140,14 @@ const [popup, setPopup] = useState(false);
             </button>
 
             <button
-              className="w-full py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition cursor-pointer"
+              className="w-full py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition mb-2 cursor-pointer"
+              onClick={() => handleShortlist(selectedJob._id)}
+            >
+              {shortlistedJobs.includes(selectedJob._id) ? "Unshortlist" : "Shortlist"}
+            </button>
+
+            <button
+              className="w-full py-2 rounded-lg bg-gray-200 text-black font-semibold hover:bg-gray-300 transition cursor-pointer"
               onClick={handleClosePopup}
             >
               Close
@@ -110,8 +155,28 @@ const [popup, setPopup] = useState(false);
           </div>
         </div>
         )}
-          
+        </>)}
+
+        {view === "applications" && (<>
+
+        <h1 className="text-4xl font-extrabold text-gray-800 mb-6 text-center">My Applications</h1>
+          <ul className="space-y-4">
+            {apps.map(app => (
+              <li key={app._id} className="flex justify-evenly items-center bg-white shadow-md rounded-lg p-4 border border-gray-200">
+                
+                <div className="flex-1 text-lg font-semibold text-gray-800 mx-10">{jobs.find(job => job._id === app.job)?.title || "Unknown Title"}</div>
+                <div className="flex-1 text-lg text-blue-400 text-center mx-10">{jobs.find(job => job._id === app.job)?.company || "Unknown Company"}</div>
+                <div className="flex-1 text-lg text-gray-600 text-center mx-10">{app.status}</div>
+              </li>
+            ))}
+          </ul>
+        </>)}
+
       </div>
+        
+        
+</div>
+          
 
     </>
   )
