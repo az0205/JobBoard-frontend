@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: "http://localhost:3200/api",
+  baseURL: "https://jobboard-backend-1-9i5o.onrender.com/api",
 });
 
 API.interceptors.request.use((req) => {
